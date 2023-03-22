@@ -73,6 +73,9 @@ async def on_message(message: disnake.Message):
         cur.execute("UPDATE users SET warn = warn + {} WHERE id = {}".format(1,message.author.id))
         await channel.send(f"Выдано предупреждение для {message.author.name}({message.author.display_name}) по причине '{reason}'")
         await message.author.send(f"Вам выдано предупреждение по причине '{reason}'")
+        if cur.execute('SELECT warn FROM users WHERE id = {}'.format(message.author.id)).fetchone()[0]>= 3:
+            await message.author.timeout(duration=60*60*24, reason="Получен третий варн, выдан таймаут на день")
+            await message.author.send("Получен третий варн, выдан таймаут на день")
 
 
 
@@ -103,6 +106,7 @@ async def rules(ctx):
 @bot.slash_command(description="Случайное число от 1 до 100")
 async def roll(ctx):
     await ctx.send(random.randint(1,101))
+
 
 
 
@@ -282,6 +286,9 @@ async def warn(ctx, member: disnake.Member, reason):
     await ctx.send(f"Пользователю {member} было выдано предупреждение по причине '{reason}', на данный момент его количество предупреждений - {cur.execute('SELECT warn FROM users WHERE id = {}'.format(member.id)).fetchone()[0]}",ephemeral=True)
     await channel.send(f"{ctx.author.mention} выдал предупреждение для {member.mention}({member.display_name}) по причине '{reason}'")
     await member.send(f"{ctx.author.mention} выдал предупреждение для вас по причине '{reason}'")
+    if cur.execute('SELECT warn FROM users WHERE id = {}'.format(ctx.author.id)).fetchone()[0] >= 3:
+        await member.timeout(duration=60*60*24, reason="Получен третий варн, выдан таймаут на день")
+        await member.send("Получен третий варн, выдан таймаут на день")
     
 
 
@@ -298,11 +305,23 @@ async def set_warns(ctx, member: disnake.Member, new_amount):
 
 
 #HELP SYSTEM
-'''@bot.slash_command(description="Показывает информацию о любой команде в этом боте (в аргументе надо передать команду)")
+@bot.slash_command(description="Показывает информацию о любой команде в этом боте (в аргументе надо передать команду)")
 async def help(ctx, command):
     coms = {"roll": "Выдает случайное число от 1 до 100",
-            }'''
-
+            "rules": "Отправляет правила сервера в чат",
+            "role": "Выдает указаному в первом аргументе участнику роль указаную во втором аргументе",
+            "create_embed": "Создает embed сообщение, в первом аргументе указывается заголовок, во втором указывается текст сообщения, в третьем по желанию можно прикрепить ссылку на фото или gif (однако Tenor) не доступен, если не хотите прикреплять ссылку можно просто указать '-'",
+            "dota_positions":  "Создает сообщение с 5 кнопками, при нажатии на кнопку выдается соответствующяя роль.",
+            "create_questionnaire": "Создает сообщение с кнопкой, при нажатии на кнопку показывается модальное сообщение созданое для регестрации в турнирах по доте",
+            "cheak_warns": "Показывает количество предупреждений в определеннного юзера, имя которого передается в первом аргументе",
+            "my_warns": "Показывает ваше количество предупреждений",
+            "warn": "Выдает предупреждение указаному в первом аргументе участнику сервера, во втором аргументе указывается причина",
+            "set_warns": "Указывает новое количество предупреждений для юзера который предается в первом аргументе, во втором аргументе указывается новое количство предупреждений"
+            }
+    if not command in coms:
+        await ctx.send("Такой команды к сожалению не существует или по ней нету гайда")
+    else:
+        await ctx.send(coms[command], ephemeral=True)
 
 
 
